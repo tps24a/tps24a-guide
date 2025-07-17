@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TPS 24A1互動式流程導覽系統</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+
+<!-- =================== 全域樣式 =================== -->
+<style>
+/* Reset */
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:"Microsoft JhengHei","Segoe UI",sans-serif;
+  background:linear-gradient(135deg,#1e3c72 0%,#2a5298 100%);
+  min-height:100vh;color:#333;
+  overflow-x:hidden;
+}
+
+/* 背景動畫效果 */
+body::before{
+  content:'';
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
+  background:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><circle cx="100" cy="100" r="80" fill="rgba(255,255,255,0.02)"/><circle cx="300" cy="300" r="120" fill="rgba(255,255,255,0.02)"/><circle cx="600" cy="200" r="60" fill="rgba(255,255,255,0.02)"/><circle cx="900" cy="400" r="100" fill="rgba(255,255,255,0.02)"/><circle cx="1100" cy="600" r="90" fill="rgba(255,255,255,0.02)"/></svg>');
+  animation:float 20s infinite ease-in-out;
+  pointer-events:none;
+  z-index:0;
+}
+@keyframes float{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-20px);}
+}
+
+.container{
+  max-width:1600px;
+  margin:0 auto;
+  padding:20px;
+  position:relative;
+  z-index:1;
+}
+
+/* ===== 頁首 ===== */
+.header{
+  text-align:center;
+  background:rgba(255,255,255,0.98);
+  border-radius:20px;
+  padding:40px;
+  margin-bottom:30px;
+  box-shadow:0 15px 40px rgba(0,0,0,.1);
+  backdrop-filter:blur(10px);
+  animation:fadeInDown .8s ease-out;
+}
+@keyframes fadeInDown{
+  from{opacity:0;transform:translateY(-30px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.header h1{
+  font-size:2.8rem;
+  margin-bottom:15px;
+  background:linear-gradient(135deg,#2a5298,#1e3c72);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  font-weight:700;
+}
+.header h1::before{
+  content:'🌈 ';
+  -webkit-text-fill-color:initial;
+}
+.header p{font-size:1.15rem;color:#64748b;}
+
+/* ===== 分頁導航 ===== */
+.tab-navigation{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  margin-bottom:25px;
+  background:rgba(255,255,255,0.98);
+  border-radius:20px;
+  padding:20px;
+  box-shadow:0 10px 30px rgba(0,0,0,.1);
+  animation:fadeInUp .8s ease-out .2s both;
+}
+@keyframes fadeInUp{
+  from{opacity:0;transform:translateY(30px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.tab-btn{
+  padding:16px 32px;
+  border:none;
+  border-radius:30px;
+  font-size:1.25rem;
+  font-weight:600;
+  color:#64748b;
+  cursor:pointer;
+  transition:all .3s cubic-bezier(.4,0,.2,1);
+  background:#f1f5f9;
+  white-space:nowrap;
+  position:relative;
+  overflow:hidden;
+}
+.tab-btn::before{
+  content:'';
+  position:absolute;
+  top:50%;left:50%;
+  width:0;height:0;
+  border-radius:50%;
+  background:rgba(255,255,255,.3);
+  transform:translate(-50%,-50%);
+  transition:width .6s,height .6s;
+}
+.tab-btn:hover::before{width:300px;height:300px;}
+.tab-btn.active{
+  color:#fff;
+  transform:translateY(-2px);
+  box-shadow:0 8px 20px rgba(0,0,0,.2);
+}
+.tab-btn.qualification.active{background:linear-gradient(135deg,#3b82f6,#2563eb);}
+.tab-btn.lab.active{background:linear-gradient(135deg,#fb923c,#f97316);}
+.tab-btn.beamline.active{background:linear-gradient(135deg,#34d399,#10b981);}
+.tab-btn.support.active{background:linear-gradient(135deg,#a78bfa,#8b5cf6);}
+.tab-btn:hover:not(.active){
+  background:#e2e8f0;
+  transform:translateY(-1px);
+  box-shadow:0 4px 12px rgba(0,0,0,.1);
+}
+
+/* ===== 分頁內容 ===== */
+.tab-content{
+  display:none;
+  animation:fadeIn .5s ease-out;
+}
+.tab-content.active{display:block;}
+@keyframes fadeIn{
+  from{opacity:0;}
+  to{opacity:1;}
+}
+
+.tab-main{
+  display:flex;
+  min-height:700px;
+  overflow:hidden;
+  border-radius:25px;
+  box-shadow:0 25px 50px rgba(0,0,0,.15);
+  background:#fff;
+}
+
+/* --- 左欄：流程圖 (3/10) --- */
+.tab-flowchart{
+  flex:3;
+  background:linear-gradient(135deg,#fafbfc,#f3f4f6);
+  overflow:hidden;
+  padding:30px;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  position:relative;
+}
+.tab-flowchart::before{
+  content:'';
+  position:absolute;
+  top:-50%;right:-50%;
+  width:200%;height:200%;
+  background:radial-gradient(circle,rgba(59,130,246,.05) 0%,transparent 70%);
+  animation:rotate 30s linear infinite;
+}
+@keyframes rotate{
+  from{transform:rotate(0deg);}
+  to{transform:rotate(360deg);}
+}
+.tab-mermaid-container{
+  background:rgba(255,255,255,0.9);
+  border-radius:15px;
+  box-shadow:0 10px 30px rgba(0,0,0,.08);
+  padding:30px;
+  position:relative;
+  z-index:1;
+  backdrop-filter:blur(10px);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  margin-top:20px;
+}
+.tab-mermaid{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+/* --- 右欄：說明內容 (7/10) --- */
+.tab-info{
+  flex:7;
+  overflow-y:auto;
+  padding:40px;
+  position:relative;
+}
+/* 根據分頁調整背景色 */
+#qualification .tab-info{background:linear-gradient(135deg,#eff6ff,#dbeafe);}
+#lab .tab-info{background:linear-gradient(135deg,#fff7ed,#fed7aa);}
+#beamline .tab-info{background:linear-gradient(135deg,#ecfdf5,#d1fae5);}
+#support .tab-info{background:linear-gradient(135deg,#f3e8ff,#e9d5ff);}
+
+.tab-info::-webkit-scrollbar{width:8px;}
+.tab-info::-webkit-scrollbar-track{background:#f1f1f1;border-radius:10px;}
+.tab-info::-webkit-scrollbar-thumb{
+  background:linear-gradient(135deg,#cbd5e1,#94a3b8);
+  border-radius:10px;
+}
+.tab-info::-webkit-scrollbar-thumb:hover{background:#64748b;}
+
+/* 右欄內容樣式 */
+.info-header{
+  font-size:1.25rem;
+  font-weight:700;
+  padding-bottom:15px;
+  margin-bottom:25px;
+  position:relative;
+}
+/* 根據分頁調整標題顏色 - 修正 emoji 顯示 */
+#qualification .info-header{
+  color:#3b82f6;
+  border-bottom:3px solid #dbeafe;
+}
+#lab .info-header{
+  color:#f97316;
+  border-bottom:3px solid #fed7aa;
+}
+#beamline .info-header{
+  color:#10b981;
+  border-bottom:3px solid #d1fae5;
+}
+#support .info-header{
+  color:#8b5cf6;
+  border-bottom:3px solid #e9d5ff;
+}
+
+/* 保留底線裝飾效果 */
+#qualification .info-header::after,
+#lab .info-header::after,
+#beamline .info-header::after,
+#support .info-header::after{
+  content:'';position:absolute;bottom:-3px;left:0;
+  width:60px;height:3px;
+  border-radius:2px;
+}
+#qualification .info-header::after{
+  background:linear-gradient(90deg,#3b82f6,#2563eb);
+}
+#lab .info-header::after{
+  background:linear-gradient(90deg,#fb923c,#f97316);
+}
+#beamline .info-header::after{
+  background:linear-gradient(90deg,#34d399,#10b981);
+}
+#support .info-header::after{
+  background:linear-gradient(90deg,#a78bfa,#8b5cf6);
+}
+#qualification .info-header::after{
+  content:'';position:absolute;bottom:-3px;left:0;
+  width:60px;height:3px;
+  background:linear-gradient(90deg,#3b82f6,#2563eb);
+  border-radius:2px;
+}
+
+/* 分頁標題 emoji 修正 */
+.info-header::before{
+  -webkit-text-fill-color:initial;
+}
+
+.info-section{
+  margin-bottom:30px;
+  padding:25px;
+  background:#fff;
+  border-radius:15px;
+  line-height:1.8;
+  transition:all .3s ease;
+  box-shadow:0 5px 15px rgba(0,0,0,.05);
+}
+/* 根據分頁調整邊框色 */
+#qualification .info-section{border-left:5px solid #dbeafe;}
+#qualification .info-section:hover{border-left-color:#3b82f6;}
+#lab .info-section{border-left:5px solid #fed7aa;}
+#lab .info-section:hover{border-left-color:#f97316;}
+#beamline .info-section{border-left:5px solid #d1fae5;}
+#beamline .info-section:hover{border-left-color:#10b981;}
+#support .info-section{border-left:5px solid #e9d5ff;}
+#support .info-section:hover{border-left-color:#8b5cf6;}
+
+.info-section:hover{
+  transform:translateX(5px);
+  box-shadow:0 8px 25px rgba(0,0,0,.1);
+}
+
+/* Toggle List 樣式 */
+.toggle-header{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:15px;
+  color:#1e293b;
+  font-size:1.25rem;
+  font-weight:600;
+  cursor:pointer;
+  user-select:none;
+  transition:all .3s ease;
+}
+.toggle-header:hover{
+  color:#3b82f6;
+}
+.toggle-arrow{
+  display:inline-block;
+  transition:transform .3s ease;
+  font-size:0.8em;
+}
+.toggle-header.collapsed .toggle-arrow{
+  transform:rotate(-90deg);
+}
+.toggle-content{
+  max-height:1000px;
+  overflow:hidden;
+  transition:max-height .3s ease-out, opacity .3s ease-out;
+  opacity:1;
+}
+.toggle-content.collapsed{
+  max-height:0;
+  opacity:0;
+}
+
+/* 統一列表樣式 */
+.info-section ol, .info-section ul{
+  margin:10px 0 10px 25px;
+  font-size:1rem;
+}
+.info-section li{
+  margin-bottom:8px;
+  position:relative;
+  padding-left:0;
+}
+.tip,.warning{
+  padding:18px;
+  border-radius:10px;
+  margin:20px 0;
+  font-size:1rem;
+  position:relative;
+  overflow:hidden;
+}
+.tip{
+  background:linear-gradient(135deg,#dbeafe,#bfdbfe);
+  border-left:5px solid #3b82f6;
+  color:#1e40af;
+}
+.warning{
+  background:linear-gradient(135deg,#fee2e2,#fecaca);
+  border-left:5px solid #ef4444;
+  color:#991b1b;
+}
+.tip::before,.warning::before{
+  content:'';
+  position:absolute;
+  top:-50%;right:-50%;
+  width:100%;height:100%;
+  background:radial-gradient(circle,rgba(255,255,255,.3) 0%,transparent 70%);
+  transform:rotate(45deg);
+}
+
+/* 程式碼區塊 */
+code{
+  background:#f3f4f6;
+  padding:3px 8px;
+  border-radius:5px;
+  font-family:'Consolas','Monaco',monospace;
+  font-size:0.9em;
+  color:#dc2626;
+}
+
+/* 動畫效果 */
+.pulse{animation:pulse 2s infinite;}
+@keyframes pulse{
+  0%{transform:scale(1);}
+  50%{transform:scale(1.05);}
+  100%{transform:scale(1);}
+}
+
+/* 新增這段 - 強制設定流程圖字體大小 */
+#flowchart-qualification text {
+  font-size: 16px !important;
+}
+
+/* 流程圖字體大小統一 */
+.tab-mermaid text{
+  font-size:1.25rem !important;
+}
+
+/* RWD */
+@media(max-width:1200px){
+  .tab-main{flex-direction:column;}
+  .tab-flowchart,.tab-info{max-height:none;}
+  .tab-flowchart{min-height:500px;}
+}
+@media(max-width:768px){
+  .header h1{font-size:2rem;}
+  .header{padding:30px 20px;}
+  .tab-navigation{
+    flex-wrap:wrap;
+    padding:15px;
+  }
+  .tab-btn{
+    font-size:1.05rem;
+    padding:14px 24px;
+  }
+  .tab-info{padding:30px 20px;}
+  .info-header{font-size:1.15rem;}
+}
+
+/* 流程圖節點hover效果 */
+.clickable-node{
+  cursor:pointer !important;
+  transition:all .3s ease;
+}
+.clickable-node:hover{
+  filter:brightness(1.1) drop-shadow(0 4px 8px rgba(0,0,0,.2));
+  transform:scale(1.05);
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <!-- 頁首 -->
+  <div class="header">
+    <h1>TPS 24A1 實驗旅程</h1>
+    <p>互動式流程導覽系統</p>
+  </div>
+
+  <!-- 分頁導航 -->
+  <div class="tab-navigation">
+    <button class="tab-btn qualification active" data-tab="qualification">🔐 資格認證</button>
+    <button class="tab-btn lab" data-tab="lab">🧪 樣本製作</button>
+    <button class="tab-btn beamline" data-tab="beamline">⚡ 光束線實驗</button>
+    <button class="tab-btn support" data-tab="support">📊 技術支援</button>
+  </div>
+
+  <!-- 分頁內容 -->
+  
+  <!-- 資格認證分頁 -->
+  <div class="tab-content active" id="qualification">
+    <div class="tab-main">
+      <div class="tab-flowchart">
+        <div class="tab-mermaid-container">
+          <div class="tab-mermaid" id="flowchart-qualification">
+%%{ init:{
+      "theme":"base",
+      "themeVariables":{"fontFamily":"Microsoft JhengHei, Segoe UI, sans-serif","fontSize":"16px"},
+      "flowchart":{"nodeSpacing":50,"rankSpacing":70}
+} }%%
+flowchart TD
+    Start(["🚀 開始TPS 24A1　<br/>實驗旅程"])
+    UserType{🔐 檢查用戶<br/>身份狀態}
+    
+    %% PI 路線
+    PI_Reg(["📋 PI註冊<br/>用戶資格"])
+    PI_Apply(["📝 PI申請<br/>實驗計畫"])
+    PI_Pass(["📧 計畫通過<br/>通知排程"])
+    
+    %% 實驗成員路線
+    Member_Wait(["⏳ 等待PI<br/>計畫通過"])
+    Member_Reg(["📋 實驗成員註冊<br/>用戶資格"])
+    Accommodation{🛏️ 是否需要實驗<br/>及公務宿舍？}
+    Apply_Dorm(["⏰ 提前預約實驗<br/>及公務宿舍"])
+    Next(["🎯 選擇樣本<br/>製作方式"])
+    
+    Start --> UserType
+    UserType -->|👨‍🔬 計畫主持人| PI_Reg
+    PI_Reg --> PI_Apply
+    PI_Apply --> PI_Pass
+    
+    UserType -->|👥 實驗成員| Member_Wait
+    PI_Pass -.->|📢 通知實驗成員| Member_Wait
+    Member_Wait --> Member_Reg
+    Member_Reg --> Accommodation
+    Accommodation -->|✅ 需要| Apply_Dorm
+    Apply_Dorm --> Next
+    Accommodation -->|❌ 不需要| Next
+    
+    classDef memberStyle fill:#E8F6FF,stroke:#1E90FF,stroke-width:3px,color:#1E90FF
+    classDef piStyle fill:#1E90FF,stroke:none,color:#E8F6FF
+    classDef decisionStyle fill:#FFFFFF,stroke:#64748b,stroke-width:2px,color:#334155
+    classDef nextStyle fill:#FFF7ED,stroke:#F97316,stroke-width:3px,color:#EA580C
+    classDef clickableNode cursor:pointer
+    
+    class Start,Member_Wait,Member_Reg,Apply_Dorm memberStyle
+    class PI_Reg,PI_Apply,PI_Pass piStyle
+    class UserType,Accommodation decisionStyle
+    class Next nextStyle,clickableNode
+    
+    click Next call switchToLab()
+          </div>
+        </div>
+      </div>
+      <div class="tab-info">
+        <div class="info-header">🔐 資格認證與住宿預約</div>
+        
+        <div class="info-section">
+          <h3 class="toggle-header collapsed" onclick="toggleSection(this)">
+            <span class="toggle-arrow">▼</span> 👨‍🔬 計畫主持人（PI）需完成：
+          </h3>
+          <div class="toggle-content collapsed">
+            <ol>
+              <li><strong>確認資格：</strong>符合國科會計畫主持人資格（補助專題研究計畫作業要點第三點）。</li>
+              <li><strong>註冊帳號：</strong>完成用戶入口網站註冊。</li>
+              <li><strong>提出計畫申請：</strong>
+                <ul style="margin-top: 8px;">
+                  <li>⚠️上半年實驗申請截止日為前一年度8/15日，下半年則為當年度2/15日。</li>
+                  <li>計畫書須以英文撰寫；若為延續計畫須提供前期之實驗成果報告。</li>
+                  <li>可選擇是否參與「學生用戶人才培育暨實習計畫」。</li>
+                </ul>
+              </li>
+              <li><strong>等待審查：</strong>包含可行性、安全性、重要性與潛力等綜合評估。</li>
+              <li><strong>排程與通知：</strong>審查通過後，Email通知排程結果。</li>
+            </ol>
+            <div class="tip">
+              <strong>💡 小提示：</strong>用戶入口網站首頁的常用連結及頂部分頁有用戶所需要的大部分資訊。
+            </div>
+            <div class="tip">
+              <strong>ℹ️ 更多資訊：</strong>用戶入口網站首頁>其他資訊>行政規章>光束線實驗計畫申請及審查作業要點。
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3 class="toggle-header collapsed" onclick="toggleSection(this)">
+            <span class="toggle-arrow">▼</span> 👥 一般用戶（實驗成員）需完成：
+          </h3>
+          <div class="toggle-content collapsed">
+            <ol>
+              <li><strong>註冊帳號：</strong>完成用戶入口網站註冊。</li>
+              <li><strong>安全訓練：</strong>⚠️完成6個月內有效之安全教育訓練。</li>
+              <li><strong>加入計畫：</strong>被PI加入所屬計畫之實驗成員。</li>
+              <li><strong>申辦用戶卡（須完成上述條件）：</strong>
+                <ul style="margin-top: 8px;">
+                  <li>⚠️線上申請約需3個工作天製卡；現場申請可當場領卡。</li>
+                  <li>上班時間（08:00-17:00）請至用戶行政與推廣室（行光大樓T203/ 1號門）領取，其餘時間請至警衛室（新安路大門）。</li>
+                  <li>領卡時須攜身分證件，遺失補發酌收200元。。</li>            
+                </ul>
+              </li>
+            </ol>
+            <div class="tip">
+              <strong>💡 小提示：</strong>用戶資格失效多因安全教育訓練過期，若無法加入計畫或填寫實驗核可表，請先確認訓練是否在效期內。
+            </div>
+            <div class="tip">
+              <strong>ℹ️ 更多資訊：</strong>用戶入口網站首頁>用戶>用戶專區。
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3 class="toggle-header collapsed" onclick="toggleSection(this)">
+            <span class="toggle-arrow">▼</span> 📘 學生用戶人才培育獎勵流程
+          </h3>
+          <div class="toggle-content collapsed">
+            <ol>
+              <li><strong>計畫勾選：</strong>PI於申請時或執行實驗計畫前，勾選該計畫加入「學生用戶人才培育暨實習計畫」。</li>
+              <li><strong>課程完成：</strong>學生須完成同步輻射專業課程並通過考試。</li>
+              <li><strong>身分確認：</strong>PI須將學生加入《實驗安全核可表》成員。</li>
+              <li><strong>參與實習：</strong>實地參與光束線操作與實習（⚠️需刷卡簽到）。</li>
+              <li><strong>報告繳交：</strong>繳交實習報告作為結案依據。</li>
+            </ol>
+            <div class="tip">
+               <strong>ℹ️ 更多資訊：</strong>用戶入口網站首頁>其他資訊>行政規章>學生用戶人才培育暨實習作業要點、作業注意事項。
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3 class="toggle-header collapsed" onclick="toggleSection(this)">
+            <span class="toggle-arrow">▼</span> 🛏️ 實驗及公務宿舍申請規定
+          </h3>
+          <div class="toggle-content collapsed">
+            <ul>
+              <li><strong>預約時間：</strong>⚠️須於3個工作天前由用戶本人線上預約。</li>
+              <li><strong>可住日數：</strong>以beamtime為基準，前後各加1天，例：beamtime為3/5 9:00-3/6 9:00，可住3/4–6共三晚，3/7退房。</li>
+              <li><strong>特殊日期：</strong>⚠️若須beamtime前2天（含）以上製備樣本，須由實驗站同仁協助申請。完成申請後，事務室將提供訂房代碼，再由用戶本人線上預約。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3 class="toggle-header collapsed" onclick="toggleSection(this)">
+            <span class="toggle-arrow">▼</span> 🔗 快速連結
+          </h3>
+          <div class="toggle-content collapsed">
+            <ul>
+              <li><strong>用戶入口網站：</strong><a href="https://userportal.nsrrc.org.tw/APNSR/index/" target="_blank" style="color:#3b82f6;">https://userportal.nsrrc.org.tw/APNSR/index/</a></li>
+              <li><strong>新手上路：</strong><a href="https://userportal.nsrrc.org.tw/APNSR/index/guide" target="_blank" style="color:#3b82f6;">https://userportal.nsrrc.org.tw/APNSR/index/guide</a></li>
+              <li><strong>宿舍線上申請系統：</strong><a href="https://dorm.nsrrc.org.tw/news/newsInfo" target="_blank" style="color:#3b82f6;">https://dorm.nsrrc.org.tw/news/newsInfo</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 樣本製作分頁 -->
+  <div class="tab-content" id="lab">
+    <div class="tab-main">
+      <div class="tab-flowchart">
+        <div class="tab-mermaid-container">
+          <div class="tab-mermaid" id="flowchart-lab">
+%%{ init:{
+      "theme":"base",
+      "themeVariables":{"fontFamily":"Microsoft JhengHei, Segoe UI, sans-serif","fontSize":"16px"},
+      "flowchart":{"nodeSpacing":50,"rankSpacing":70}
+} }%%
+flowchart TD
+    D(["🎯 選擇樣本<br/>製作方式"])
+    E(["✔️ 樣本製作完成"])
+    F(["📝 填寫實驗室<br/>申請表"])
+    G{🛡️ 實驗室申請<br/>核可確認}
+    H(["📅 線上預約實驗室<br/>設備與時段"])
+    I(["🧪 使用實驗室<br/>製備樣本"])
+    J(["📝 提交實驗<br/>安全核可表"])
+
+    D -->|🏠 自行製作| E
+    D -->|🔬 實驗室製作| F
+    F --> G
+    G -->|❌ 需修改| F
+    G -->|✅ 通過| H
+    H --> I
+    I --> E
+    E --> J
+
+    classDef labStyle fill:#FFF7ED,stroke:#F97316,stroke-width:3px,color:#EA580C
+    classDef decisionStyle fill:#FFFFFF,stroke:#64748b,stroke-width:2px,color:#334155
+    classDef nextStyle fill:#ECFDF5,stroke:#10B981,stroke-width:3px,color:#059669
+    classDef clickableNode cursor:pointer
+
+    class D,E,F,H,I labStyle
+    class G decisionStyle
+    class J nextStyle,clickableNode
+
+    click J call switchToBeamline()
+          </div>
+        </div>
+      </div>
+<div class="tab-info">
+  <div class="info-header">🧪 樣本製作與實驗室申請</div>
+  
+        <div class="info-section">
+          <h3 class="toggle-header collapsed" onclick="toggleSection(this)">
+            <span class="toggle-arrow">▼</span> 🧬 生物樣本製作前須知
+          </h3>
+          <div class="toggle-content collapsed">
+            <div style="display:flex;gap:20px;">
+              <div style="flex:1;">
+                <ul>
+                  <li><strong>生物安全等級：</strong>
+                    <ul style="margin-top: 8px;">
+                      <li>BSL-1/ RG-1：冷凍固定後可直接到實驗站觀察。</li>
+                      <li>BSL-2/ RG-2/ 其它：⚠️須填寫《生物樣品風險評鑑表》並經本中心生安會核可，方可在未去活化、但經冷凍固定的狀態下進行實驗站觀察。</li>
+                    </ul>
+                  </li>
+                  <li><strong>樣本厚度：</strong>
+                    <ul style="margin-top: 8px;">
+                      <li>⚠️生物樣本建議不超過10 µm。</li>
+                      <li>若樣本過厚，不僅影像對比不佳，亦可能因冷凍過程中產生冰晶而破壞樣本結構。</li>
+                    </ul>
+                  </li>
+                  <li><strong>冷凍固定：</strong>
+                    <ul style="margin-top: 8px;">
+                      <li>優於化學固定，能更好保留原始結構，避免結構損傷。</li>
+                      <li>低溫可減少輻射損傷，保護樣本完整性。</li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+              <div style="flex:1;">
+                <ul>
+                  <li><strong>螢光標記輔助：</strong>
+                    <ul style="margin-top: 8px;">
+                      <li>螢光染劑對特定胞器具專一性，有助於結構識別。</li>
+                      <li>建議冷凍前先進行螢光染色，輔助後續分析。</li>
+                    </ul>
+                  </li>
+                  <li><strong>定位點設置：</strong>
+                    <ul style="margin-top: 8px;">
+                      <li>為利三維影像重建，樣本在冷凍前通常會加入奈米金作為定位參考點。</li>
+                      <li>若樣本已有清晰粒子結構，可不額外加奈米金。</li>
+                    </ul>
+                  </li>
+                  <li><strong>實驗條件提前優化：</strong>
+                    <ul style="margin-top: 8px;">
+                      <li>⚠️實驗條件（預計觀察的樣本狀態）應在所屬實驗室完成優化後再轉至金網操作。</li>
+                      <li>⚠️不同樣本種類塗佈或種植於金網上的狀況都不同，若該樣本初次進行TPS 24A1實驗，建議提早進行濃度優化。</li>
+                      <li>實驗條件提前優化，可避免浪費有限的beamtime。</li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="tip">
+              <strong>💡 小提示：</strong>請至本頁下方「文件下載」區取得「冷凍細胞製備流程與細節」及「樣本製備用物品購買資訊」，內含更多製作樣本的建議。
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3 class="toggle-header collapsed" onclick="toggleSection(this)">
+            <span class="toggle-arrow">▼</span> 🎯 樣本製作方式比較
+          </h3>
+          <div class="toggle-content collapsed">
+            <ul>
+              <li><strong>自行製作：</strong>
+                <ul style="margin-top: 8px;">
+                  <li>通常在所屬或就近設施進行樣本製備。</li>
+                  <li>優勢為節省舟車勞頓的時間，對較為敏感樣本的生長狀況比較好控制，且時間較為彈性，可依實驗排程調整。</li>
+                </ul>
+              </li>
+              <li><strong>實驗室製作：</strong>
+                <ul style="margin-top: 8px;">
+                  <li>於本中心公用實驗室進行樣本製備。</li>
+                  <li>優勢為設備參數已經優化過，且有即時技術支援與問題排解。</li>
+                  <li>⚠️部分設備可經受訓核可後自行操作，實驗排程更加彈性，將不受限於實驗站同仁服務時間。</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3 class="toggle-header collapsed" onclick="toggleSection(this)">
+            <span class="toggle-arrow">▼</span> 🔬 本中心公用實驗室資訊
+          </h3>
+          <div class="toggle-content collapsed">
+            <div style="display:flex;gap:20px;">
+              <div style="flex:1;">
+                <p><strong>🧪 細胞培養室：</strong></p>
+                <ul>
+                  <li><strong>位置：</strong>TLS E153/ 11號門/ 21柱</li>
+                  <li><strong>實驗內容：</strong>細胞培養與常溫觀察</li>
+                  <li><strong>設備清單：</strong>
+                    <ul style="margin-top: 8px;">
+                      <li>生物安全操作櫃</li>
+                      <li>二氧化碳培養箱</li>
+                      <li>倒立式螢光顯微鏡</li>
+                      <li>溫控離心機/ 迷你離心機</li>
+                      <li>超音波震盪機/ 試管震盪機</li>
+                      <li>恆溫水浴槽</li>
+                      <li>微量移液器/ 電動大容量移液器</li>
+                      <li>血球計數盤/ 細胞計數儀</li>
+                      <li>輝光放電儀</li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+              <div style="flex:1;">
+                <p><strong>❄️ 低濕度生物實驗室：</strong></p>
+                <ul>
+                  <li><strong>位置：</strong>TPS T224/ 14號門/ 36柱</li>
+                  <li><strong>實驗內容：</strong>冷凍樣本製備與篩選</li>
+                  <li><strong>設備清單：</strong>
+                    <ul style="margin-top: 8px;">
+                      <li>生物安全操作櫃</li>
+                      <li>急衝式冷凍儀/ 高壓冷凍儀</li>
+                      <li>二氧化碳培養箱</li>
+                      <li>超音波震盪機/ 試管震盪機</li>
+                      <li>正立式螢光顯微鏡</li>
+                      <li>低溫樣本觀測載台</li>
+                      <li>冷凍切片機</li>
+                      <li>離心機</li>
+                      <li>OD600光度計</li>
+                      <li>微量移液器</li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="tip">
+              <strong>💡 小提示：</strong>請至下方「文件下載」區取得「螢光顯微鏡可用濾鏡波段」及「NSRRC建物與門號」等資訊。
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3 class="toggle-header collapsed" onclick="toggleSection(this)">
+            <span class="toggle-arrow">▼</span> 📋 實驗室使用申請說明
+          </h3>
+          <div class="toggle-content collapsed">
+            <ul>
+              <li><strong>申請時機：</strong>選擇於本中心公用實驗室進行樣本製備（包含細胞培養、冷凍樣本製備或篩選等）。</li>
+              <li><strong>申請流程：</strong>
+                <ul style="margin-top: 8px;">
+                  <li>請填寫《實驗室申請表》，完成後將文件寄送至實驗室聯絡人謝嘉濬先生（<a href="mailto:hsieh.cc@nsrrc.org.tw" style="color:#f97316;">hsieh.cc@nsrrc.org.tw</a>）以利資料確認。</li>
+                  <li>待實驗室負責人林子敬博士審核通過後，將寄發核可通知，方可安排樣本製備作業。</li>
+                  <li>首次使用本實驗室者，需先閱讀相關文件，經實驗站同仁進行環境與安全說明並簽署《使用者須知確認表》後，方可進行實驗操作。</li>
+                </ul>
+              </li>
+              <li><strong>隨表檢附資料：</strong>
+                <ul style="margin-top: 8px;">
+                  <li>使用者（即實際執行實驗之人員）近一年內完成之4小時生物安全訓練證明。</li>
+                  <li>生物材料使用等級證明文件（如購買來源文件或相關文獻資料）。⚠️若擬使用BSL-2、RG-2或等級不明之樣本，請提前告知，並填寫《生物樣品風險評鑑表》，以利審核與風險評估。</li>
+                  <li>⚠️若實驗涉及列管化學品、毒化物、重金屬等特殊化學品，請提前告知，並提供對應之SDS或LCSS，以利進行審核與確認。</li>
+                </ul>
+              </li>
+            </ul>
+            <div class="warning">
+              <strong>⚠️ 嚴格規定：</strong>在實驗室使用申請未經核可前，實驗站同仁有權禁止用戶進行任何實驗操作。
+            </div>
+            <div class="tip">
+              <strong>💡 小提示：</strong>請至下方「文件下載」區取得「使用者生物安全文件」，內含實驗室申請所需資料，包括《實驗室申請表》、《使用者須知確認表》及首次使用者需閱讀之相關文件。
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3 class="toggle-header collapsed" onclick="toggleSection(this)">
+            <span class="toggle-arrow">▼</span> 📅 設備與技術支援預約系統
+          </h3>
+          <div class="toggle-content collapsed">
+            <ul>
+              <li><strong>預約資格：</strong>計畫通過並核給beamtime的用戶。</li>
+              <li><strong>預約流程：</strong>用戶自行線上預約所需要的設備與時間，經實驗站同仁同意預約後，方可於預約時段領取門禁卡並進行實驗操作。</li>
+              <li><strong>預約網站：</strong><a href="https://tps24a.simplybook.asia/" target="_blank" style="color:#f97316;">https://tps24a.simplybook.asia/</a></li>
+            </ul>
+            <div class="warning">
+              <strong>⚠️ 注意：</strong>本實驗室管理者有權依據用戶之使用紀錄與訓練完成情形，調整其設備預約與使用權限。
+            </div>
+            <div class="tip">
+              <strong>💡 小提示：</strong>部分設備或技術支援需實驗站同仁協作或安排訓練，請事先與相關人員確認雙方時間，並於確認後再行預約。
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3 class="toggle-header collapsed" onclick="toggleSection(this)">
+            <span class="toggle-arrow">▼</span> 🔗 文件下載
+          </h3>
+          <div class="toggle-content collapsed">
+            <ul>
+              <li><strong>生物樣品風險評鑑表：</strong><a href="https://gofile.me/5Nv7c/T61ARE8sv" target="_blank" style="color:#f97316;">https://gofile.me/5Nv7c/T61ARE8sv</a></li>
+              <li><strong>冷凍細胞製備流程與細節：</strong><a href="https://gofile.me/5Nv7c/x9fVTvxWf" target="_blank" style="color:#f97316;">https://gofile.me/5Nv7c/x9fVTvxWf</a></li>
+              <li><strong>樣本製備用物品購買資訊：</strong><a href="https://gofile.me/5Nv7c/kHv9ve7fu" target="_blank" style="color:#f97316;">https://gofile.me/5Nv7c/S1T43nAcU</a></li>
+              <li><strong>螢光顯微鏡可用濾鏡波段：</strong><a href="https://gofile.me/5Nv7c/5nevc34V5" target="_blank" style="color:#f97316;">https://gofile.me/5Nv7c/5nevc34V5</a></li>
+              <li><strong>NSRRC建物與門號：</strong><a href="https://gofile.me/5Nv7c/5RTjyms2b" target="_blank" style="color:#f97316;">https://gofile.me/5Nv7c/5RTjyms2b</a></li>
+              <li><strong>使用者生物安全文件：</strong><a href="https://gofile.me/5Nv7c/9wbAr1sx2" target="_blank" style="color:#f97316;">https://gofile.me/5Nv7c/9wbAr1sx2</a></li>            
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 24A1 實驗分頁 -->
+  <div class="tab-content" id="beamline">
+    <div class="tab-main">
+      <div class="tab-flowchart">
+        <div class="tab-mermaid-container">
+          <div class="tab-mermaid" id="flowchart-beamline">
+%%{ init:{
+      "theme":"base",
+      "themeVariables":{"fontFamily":"Microsoft JhengHei, Segoe UI, sans-serif","fontSize":"16px"},
+      "flowchart":{"nodeSpacing":50,"rankSpacing":70}
+} }%%
+flowchart TD
+    J(["📝 提交實驗<br/>安全核可表"])
+    K{🛡️ 實驗安全<br/>核可確認}
+    L(["⚡ 進行24A1　<br/>光束線實驗"])
+    M(["💾 實驗完成<br/>數據收集"])
+
+    J --> K
+    K -->|❌ 需修改| J
+    K -->|✅ 通過| L
+    L --> M
+
+    classDef beamlineStyle fill:#ECFDF5,stroke:#10B981,stroke-width:3px,color:#059669
+    classDef decisionStyle fill:#FFFFFF,stroke:#64748b,stroke-width:2px,color:#334155
+    classDef nextStyle fill:#F3E8FF,stroke:#A78BFA,stroke-width:3px,color:#7C3AED
+    classDef clickableNode cursor:pointer
+
+    class J,L beamlineStyle
+    class K decisionStyle
+    class M nextStyle,clickableNode
+
+    click M call switchToSupport()
+          </div>
+        </div>
+      </div>
+      <div class="tab-info">
+        <div class="info-header">⚡ 光束線實驗操作指南</div>
+        
+        <div class="info-section">
+          <h3 class="toggle-header collapsed" onclick="toggleSection(this)">
+            <span class="toggle-arrow">▼</span> 📝 實驗安全核可表
+          </h3>
+          <div class="toggle-content collapsed">
+            <ul>
+              <li><strong>提交時限：</strong>⚠️PI最晚須於beamtime3個工作天前提交《實驗安全核可表》。</li>
+              <li><strong>實驗成員登記：</strong>所有參與beamtime的人員皆須列入核可表，⚠️無法加入者請確認其是否為有效用戶。</li>
+            </ul>
+            <div class="warning">
+              <strong>⚠️ 注意：</strong>在《實驗安全核可表》未通過前，實驗站將無任何光源可以使用。
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3 class="toggle-header collapsed" onclick="toggleSection(this)">
+            <span class="toggle-arrow">▼</span> 🔬 光束線技術規格
+          </h3>
+          <div class="toggle-content collapsed">
+            <ul>
+              <li><strong>能量範圍：</strong>260-1200 eV。</li>
+              <li><strong>常用條件：</strong>520 eV，穿透厚度10 µm、可視範圍15.6 µm、解析度30-50 nm。</li>
+              <li><strong>技術特色：</strong>
+                <ul style="margin-top: 8px;">                
+                  <li>對生物樣本具高吸收對比、無須染色即見原生結構。</li>
+                  <li>在穿透厚度內的生物樣本無須切片即可獲得3D結構資訊。</li>
+                  <li>低溫觀測環境可降低輻射對生物樣本的輻射傷害。</li>
+                </ul>
+              </li>              
+            </ul>
+            <div class="tip">
+              <strong>💡 小提示：</strong>結構越接近解析極限，需具高密度或強吸收（如金屬或脂質體）；吸收弱的結構，則須有較大尺寸才能被觀察。
+            </div>
+            <div class="tip">
+              <strong>ℹ️ 說明：</strong>2600 eV高能量區間目前建造中，預計穿透厚度約30 µm，適合觀測更厚實的細胞與組織。
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3 class="toggle-header collapsed" onclick="toggleSection(this)">
+            <span class="toggle-arrow">▼</span> 🎯 實驗操作標準流程
+          </h3>
+          <div class="toggle-content collapsed">
+            <ol>
+              <li><strong>裝載樣本：</strong>透過移轉腔體，將樣本自儲存槽移至主腔體的旋轉台上。</li>
+              <li><strong>視野定位：</strong>確認目前視野下的位置並與低倍率光學影像進行對應。</li>
+              <li><strong>目標確認：</strong>移動至欲觀察區域，輔以高倍率螢光影像確認拍攝目標。</li>
+              <li><strong>目標置中：</strong>將目標結構對準旋轉台轉軸中心。</li>
+              <li><strong>影像擷取：</strong>擷取適當曝光的旋轉影像序列。</li>
+              <li><strong>資料上傳：</strong>將原始影像上傳至NAS，供用戶下載。</li>
+            </ol>
+            <div class="tip">
+              <strong>💡 小提示：</strong>為提升實驗效率，樣本的預先篩選相當關鍵。低倍率光學影像可協助快速定位，高倍率螢光影像則有助於進行結構關聯。
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3 class="toggle-header collapsed" onclick="toggleSection(this)">
+            <span class="toggle-arrow">▼</span> 💾 實驗站NAS
+          </h3>
+          <div class="toggle-content collapsed">
+            <ul>
+              <li><strong>帳號密碼：</strong>以實驗室為單位，私下提供。</li>
+              <li><strong>連接方式：</strong>
+                <ul style="margin-top: 8px;">
+                  <li>使用瀏覽器：<a href="http://tps24a.quickconnect.to/" target="_blank" style="color:#10b981;">http://tps24a.quickconnect.to/</a></li>
+                  <li>使用FTP連接軟體（需另外申請開通）：主機：140.110.200.85；連線埠：21。</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 技術支援分頁 -->
+  <div class="tab-content" id="support">
+    <div class="tab-main">
+      <div class="tab-flowchart">
+        <div class="tab-mermaid-container">
+          <div class="tab-mermaid" id="flowchart-support">
+%%{ init:{
+      "theme":"base",
+      "themeVariables":{"fontFamily":"Microsoft JhengHei, Segoe UI, sans-serif","fontSize":"16px"},
+      "flowchart":{"nodeSpacing":50,"rankSpacing":70}
+} }%%
+flowchart TD
+    M(["💾 實驗完成<br/>數據收集"])
+    P{📊 是否需要<br/>技術支援？}
+    N(["📅 線上預約技術<br/>支援與時段"])
+    O(["🏆 完成流程<br/>論文發表"])
+
+    M --> P
+    P -->|✅ 需要| N
+    N --> O
+    P -->|❌ 不需要| O
+
+    classDef supportStyle fill:#F3E8FF,stroke:#A78BFA,stroke-width:3px,color:#7C3AED
+    classDef decisionStyle fill:#FFFFFF,stroke:#64748b,stroke-width:2px,color:#334155
+    classDef completeStyle fill:#FEF3C7,stroke:#F59E0B,stroke-width:3px,color:#D97706
+
+    class M,N supportStyle
+    class P decisionStyle
+    class O completeStyle
+          </div>
+        </div>
+      </div>
+      <div class="tab-info">
+        <div class="info-header">📊 技術支援與成果規範</div>
+        
+        <div class="info-section">
+          <h3 class="toggle-header collapsed" onclick="toggleSection(this)">
+            <span class="toggle-arrow">▼</span> 👨‍🔧 技術支援服務
+          </h3>
+          <div class="toggle-content collapsed">
+            <ul>
+              <li><strong>影像重建訓練（必要）：</strong>⚠️將旋轉影像重建為Z-stack立體影像。</li>
+              <li><strong>影像分割訓練：</strong>進行影像分割與套色，提升視覺化效果。</li>
+              <li><strong>資料分析與討論：</strong>針對影像結果進行討論，聚焦於本技術的潛在發表重點與論文草稿修訂建議。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3 class="toggle-header collapsed" onclick="toggleSection(this)">
+            <span class="toggle-arrow">▼</span> 📅 設備與技術支援預約系統
+          </h3>
+          <div class="toggle-content collapsed">
+            <ul>
+              <li><strong>預約資格：</strong>計畫通過並核給beamtime的用戶。</li>
+              <li><strong>預約流程：</strong>用戶自行線上預約所需要的技術支援與時間，經實驗站同仁同意預約後，依預約內容提供協助。</li>
+              <li><strong>預約網站：</strong><a href="https://tps24a.simplybook.asia/" target="_blank" style="color:#8b5cf6;">https://tps24a.simplybook.asia/</a></li>
+            </ul>
+            <div class="tip">
+              <strong>💡 小提示：</strong>部分技術支援需實驗站同仁協作或安排訓練，請事先與相關人員確認雙方時間，並於確認後再行預約。
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3 class="toggle-header collapsed" onclick="toggleSection(this)">
+            <span class="toggle-arrow">▼</span> 📚 光束線實驗成果規範
+          </h3>
+          <div class="toggle-content collapsed">
+            <ul>
+              <li><strong>具成果公開義務：</strong>
+                <ul style="margin-top: 8px;">
+                  <li>依本中心規定，申請光束線計畫之成果須公開發表。</li>
+                  <li>成果包含期刊與會議論文、研究生畢業論文或專利清單。</li>
+                </ul>
+              </li>
+              <li><strong>成果須揭露資訊：</strong>
+                <ul style="margin-top: 8px;">
+                  <li>於成果中載明相關光束線名稱或編號。</li>
+                  <li>致謝中心提供實驗時段與技術支援或列本中心人員為共同作者（視參與程度）。</li>
+                  <li>須於論文致謝、作者單位中正確標示本中心名稱（擇一）：
+                    <ul style="margin-top: 8px;">
+                      <li>National Synchrotron Radiation Research Center (NSRRC), Taiwan</li>
+                      <li>National Synchrotron Radiation Research Center (NSRRC), Hsinchu, Taiwan</li>
+                      <li>National Synchrotron Radiation Research Center (NSRRC), Taiwan, R. O. C.</li>
+                      <li>National Synchrotron Radiation Research Center (NSRRC), Republic of China</li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+            <div class="warning">
+              <strong>⚠️ 注意：</strong>若未遵守相關規範，本中心將停止該用戶所有權利一年，並將影響日後光束線計畫審查與時段分配作業。
+            </div>
+            <div class="tip">
+              <strong>ℹ️ 更多資訊：</strong>用戶入口網站首頁>其他資訊>行政規章>光束線實驗計畫主持人之研發成果規範。
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3 class="toggle-header collapsed" onclick="toggleSection(this)">
+            <span class="toggle-arrow">▼</span> ☎️ 聯絡窗口
+          </h3>
+          <div class="toggle-content collapsed">
+            <ul>
+              <li><strong>光束線發言人/ 公用實驗室負責人：</strong>林子敬博士
+                <ul style="margin-top: 8px;">
+                  <li><a href="mailto:lin.zj@nsrrc.org.tw" style="color:#8b5cf6;">lin.zj@nsrrc.org.tw</a></li>
+                  <li>03-5780281 #7204</li>
+                </ul>
+              </li>
+              <li><strong>光束線經理：</strong>陳建樺博士
+                <ul style="margin-top: 8px;">
+                  <li><a href="mailto:chen.jh@nsrrc.org.tw" style="color:#8b5cf6;">chen.jh@nsrrc.org.tw</a></li>
+                  <li>03-5780281 #7309</li>
+                </ul>
+              </li>
+              <li><strong>公用實驗室聯絡人：</strong>謝嘉濬先生
+                <ul style="margin-top: 8px;">
+                  <li><a href="mailto:hsieh.cc@nsrrc.org.tw" style="color:#8b5cf6;">hsieh.cc@nsrrc.org.tw</a></li>
+                  <li>03-5780281 #7152 #8224 #3153</li>
+                </ul>
+              </li>
+              <li><strong>TPS 24A1實驗站：</strong>
+                <ul style="margin-top: 8px;">
+                  <li><a href="mailto:tps24a@gmail.com" style="color:#8b5cf6;">tps24a@gmail.com</a></li>
+                  <li>03-5780281 #2242</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =================== JS =================== -->
+<script>
+/* 初始化 Mermaid */
+mermaid.initialize({
+  startOnLoad: true,
+  theme: "base",
+  themeVariables: {
+    fontFamily: "Microsoft JhengHei, Segoe UI, sans-serif",
+    fontSize: "16px"
+  },
+  flowchart: {
+    nodeSpacing: 50,
+    rankSpacing: 70,
+    curve: "basis",
+    defaultRenderer: "dagre"
+  },
+  securityLevel: 'loose'
+});
+
+/* Toggle Section 功能 */
+function toggleSection(header) {
+  const content = header.nextElementSibling;
+  const arrow = header.querySelector('.toggle-arrow');
+  
+  header.classList.toggle('collapsed');
+  content.classList.toggle('collapsed');
+}
+
+/* 分頁切換功能 */
+function switchTab(tabName) {
+  // 隱藏所有分頁內容
+  document.querySelectorAll('.tab-content').forEach(content => {
+    content.classList.remove('active');
+  });
+  
+  // 移除所有按鈕的 active 狀態
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  
+  // 顯示選中的分頁內容
+  document.getElementById(tabName).classList.add('active');
+  
+  // 添加選中按鈕的 active 狀態
+  document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+  
+  // 捲動到頁面頂部
+  window.scrollTo(0, 0);
+  
+  // 重新渲染 Mermaid 圖表
+  setTimeout(() => {
+    const activeChart = document.querySelector(`#${tabName} .tab-mermaid`);
+    if (activeChart) {
+      mermaid.init(undefined, activeChart);
+      
+      // 為可點擊節點添加事件
+      addClickableNodes();
+    }
+  }, 100);
+}
+
+/* 定義分頁切換函數供 Mermaid 使用 */
+window.switchToLab = function() {
+  switchTab('lab');
+};
+window.switchToBeamline = function() {
+  switchTab('beamline');
+};
+window.switchToSupport = function() {
+  switchTab('support');
+};
+
+/* 為可點擊節點添加視覺效果 */
+function addClickableNodes() {
+  // 尋找所有可點擊的節點
+  const clickableNodes = document.querySelectorAll('.clickableNode');
+  
+  clickableNodes.forEach(node => {
+    // 添加 hover 效果的樣式
+    node.style.cursor = 'pointer';
+    node.style.transition = 'all 0.3s ease';
+    
+    // 滑鼠移入效果
+    node.addEventListener('mouseenter', function() {
+      this.style.filter = 'brightness(1.1) drop-shadow(0 4px 8px rgba(0,0,0,0.2))';
+      this.style.transform = 'scale(1.05)';
+    });
+    
+    // 滑鼠移出效果
+    node.addEventListener('mouseleave', function() {
+      this.style.filter = '';
+      this.style.transform = '';
+    });
+    
+    // 添加點擊動畫
+    node.addEventListener('click', function() {
+      this.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        this.style.transform = 'scale(1.05)';
+      }, 100);
+    });
+  });
+}
+
+/* 綁定分頁按鈕事件 */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    switchTab(btn.dataset.tab);
+  });
+});
+
+/* 頁面載入時初始化 */
+window.addEventListener('DOMContentLoaded', () => {
+  // 初始化第一個分頁
+  switchTab('qualification');
+  
+  // 添加載入動畫
+  document.querySelectorAll('.info-section').forEach((section, index) => {
+    section.style.opacity = '0';
+    section.style.transform = 'translateY(20px)';
+    setTimeout(() => {
+      section.style.transition = 'all 0.5s ease';
+      section.style.opacity = '1';
+      section.style.transform = 'translateY(0)';
+    }, index * 100);
+  });
+});
+
+/* 平滑滾動效果 */
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function (e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  });
+});
+
+/* Mermaid 錯誤處理 */
+mermaid.parseError = function(err, hash) {
+  console.error('Mermaid 解析錯誤:', err);
+};
+
+/* 響應式處理 */
+function handleResponsive() {
+  const isMobile = window.innerWidth <= 768;
+  const flowcharts = document.querySelectorAll('.tab-flowchart');
+  
+  flowcharts.forEach(chart => {
+    if (isMobile) {
+      chart.style.minHeight = '400px';
+    } else {
+      chart.style.minHeight = '500px';
+    }
+  });
+}
+
+window.addEventListener('resize', handleResponsive);
+handleResponsive();
+</script>
+</body>
+</html>
